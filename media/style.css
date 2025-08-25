@@ -7,10 +7,24 @@ body {
     padding: 0;
 }
 article {
-    white-space: pre-wrap;
+    /*white-space: pre-wrap;*/
     margin: 0;
     padding: 15pt 4pt 15pt 8pt;
     border-top: 1px dashed rgb(90, 88, 88);
+}
+p {
+    margin-top: 15pt;
+    padding: 0;
+}
+code {
+    font-family: monospace;
+    font-size: 12pt;
+    background: #252729;
+    border-radius: 4pt;
+    padding: 2pt 4pt;
+}
+.codeblock {
+    display: block;
 }
 a {
     text-decoration: none;

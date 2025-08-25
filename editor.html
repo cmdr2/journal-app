@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<title>Urnal</title>
+<link rel="stylesheet" href="/media/style.css" />
+<body>
+<nav>
+  Nav: <a href="/?blog_id=private">[home private]</a> | <a href="/?blog_id=public">[home PUBLIC]</a>
+</nav>
+<form id="postForm" method="post" action="/new">
+    Blog: 
+    <select name="blog_id">
+        <option value="private" selected>private</option>
+        <option value="public">PUBLIC</option>
+    </select>
+    <br/>
+    <textarea id="editor" name="post_body" autofocus></textarea>
+    <br/>
+    <button id="createPostBtn" type="submit">Post</button>
+</form>
+
+<script>
+// restore draft on load
+const editor = document.getElementById("editor");
+editor.value = localStorage.getItem("urnal-draft") || "";
+
+// save draft on input
+editor.addEventListener("input", () => {
+    localStorage.setItem("urnal-draft", editor.value);
+});
+
+// clear draft on submit
+document.getElementById("postForm").addEventListener("submit", () => {
+    localStorage.removeItem("urnal-draft");
+});
+</script>
+</body>
+</html>

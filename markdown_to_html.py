@@ -135,19 +135,14 @@ class MarkdownToHtmlConverter:
         return "\n".join(result)
 
     def _replace_table(self, match):
-        headers = match.group(1).strip().split("|")
+        headers = [h.strip() for h in match.group(1).split("|") if h.strip()]
         rows = match.group(2).strip().split("\n")
 
-        # Build the HTML for the table
-        thead = (
-            "<thead><tr>"
-            + "".join(f"<th>{self._escape_html(header.strip())}</th>" for header in headers)
-            + "</tr></thead>"
-        )
+        thead = "<thead><tr>" + "".join(f"<th>{self._escape_html(header)}</th>" for header in headers) + "</tr></thead>"
         tbody = "<tbody>"
         for row in rows:
-            columns = row.strip().split("|")
-            tbody += "<tr>" + "".join(f"<td>{self._escape_html(col.strip())}</td>" for col in columns) + "</tr>"
+            columns = [c.strip() for c in row.split("|") if c.strip()]
+            tbody += "<tr>" + "".join(f"<td>{self._escape_html(col)}</td>" for col in columns) + "</tr>"
         tbody += "</tbody>"
 
         return f"<table>{thead}{tbody}</table>"

@@ -12,6 +12,13 @@ article {
     padding: 15pt 4pt 15pt 8pt;
     border-top: 1px dashed rgb(90, 88, 88);
 }
+table, th, td {
+    border: 1px solid rgb(90, 88, 88);
+    border-collapse: collapse;
+}
+th, td {
+    padding: 2pt 4pt;
+}
 p {
     margin-top: 15pt;
     padding: 0;

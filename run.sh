@@ -1,3 +1,3 @@
 #!/bin/bash
 
-uvicorn --port 9876 server:app
+python server.py

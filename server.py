@@ -57,6 +57,7 @@ def index():
     return """
 <!DOCTYPE html>
 <html>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Urnal</title>
 <link rel="stylesheet" href="/media/style.css" />
 <body>
@@ -88,6 +89,7 @@ def list_for_month(year, month):
 <!DOCTYPE html>
 <html>
 <title>Urnal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="/media/style.css" />
 <body>
 <nav>

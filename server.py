@@ -5,8 +5,8 @@ from os import path, listdir
 from markdown_to_html import MarkdownToHtmlConverter
 
 POSTS_DIR = {
-    "private": "test_posts/private",
-    "public": "test_posts/public",
+    "private": "../../Dropbox/journal",
+    "public": "../../Dropbox/Apps/journal-public/notes",
 }
 MEDIA_DIR = "media"
 MONTHS = [

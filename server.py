@@ -1,6 +1,4 @@
-from fastapi import FastAPI, Form, status
-from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
-
+from flask import Flask, request, send_file, redirect, url_for
 from datetime import datetime
 from os import path, listdir
 
@@ -26,11 +24,15 @@ MONTHS = [
     "December",
 ]
 
-app = FastAPI()
+app = Flask(__name__)
 
 
-@app.get("/")
-def index(blog_id: str):
+@app.route("/")
+def index():
+    blog_id = request.args.get('blog_id')
+    if not blog_id:
+        return "Missing blog_id parameter", 400
+    
     posts_dir = POSTS_DIR[blog_id]
     paths = listdir(posts_dir)
     paths = [path for path in paths if path.endswith(".txt")]
@@ -52,25 +54,27 @@ def index(blog_id: str):
         paths = [f'<li><a href="p/{year}/{month}?blog_id={blog_id}">{month}</a></li>' for month in months]
         content += "<ul>\n" + "\n".join(paths) + "</ul>"
 
-    return HTMLResponse(
-        """
+    return """
 <!DOCTYPE html>
 <html>
 <title>Urnal</title>
 <link rel="stylesheet" href="/media/style.css" />
 <body>
-"""
-        + content
-        + """
+""" + content + """
 <a href="/new"><div id="newPostFloatingLink">[+]</div></a>
 </body>
 </html>
 """
-    )
 
 
-@app.get("/p/{year}/{month}")
-def list_for_month(year: str, month: str, blog_id: str, convert_markdown: bool = True):
+@app.route("/p/<year>/<month>")
+def list_for_month(year, month):
+    blog_id = request.args.get('blog_id')
+    if not blog_id:
+        return "Missing blog_id parameter", 400
+    
+    convert_markdown = request.args.get('convert_markdown', 'true').lower() == 'true'
+    
     posts = get_posts(f"{month} {year}.txt", blog_id)
     if not posts:
         return "No posts found for this month!"
@@ -80,8 +84,7 @@ def list_for_month(year: str, month: str, blog_id: str, convert_markdown: bool =
     posts = [f"<article>{post}</article>" for post in posts]
     posts = "\n\n".join(posts)
 
-    return HTMLResponse(
-        """
+    return """
 <!DOCTYPE html>
 <html>
 <title>Urnal</title>
@@ -91,30 +94,33 @@ def list_for_month(year: str, month: str, blog_id: str, convert_markdown: bool =
   Nav: <a href="/?blog_id=private">[home private]</a> | <a href="/?blog_id=public">[home PUBLIC]</a>
 </nav>
 <div id="posts">
-"""
-        + posts
-        + """
+""" + posts + """
 </div>
 <a href="/new"><div id="newPostFloatingLink">[+]</div></a>
 <a id="footer">&nbsp;</a>
 </body>
 </html>
 """
-    )
 
 
-@app.get("/media/{file_path}")
+@app.route("/media/<path:file_path>")
 def media(file_path):
-    return FileResponse(path.join(MEDIA_DIR, file_path))
+    return send_file(path.join(MEDIA_DIR, file_path))
 
 
-@app.get("/new")
+@app.route("/new", methods=["GET"])
 def editor():
-    return FileResponse("editor.html")
+    return send_file("editor.html")
 
 
-@app.post("/new")
-async def create(blog_id: str = Form(None), post_body: str = Form(None)):
+@app.route("/new", methods=["POST"])
+def create():
+    blog_id = request.form.get('blog_id')
+    post_body = request.form.get('post_body')
+    
+    if not blog_id or not post_body:
+        return "Missing required form fields", 400
+    
     t = datetime.now()
     post_file = t.strftime("%B %Y.txt")
     post_time = t.strftime("%a %b %d %H:%M:%S %Y")
@@ -133,7 +139,7 @@ async def create(blog_id: str = Form(None), post_body: str = Form(None)):
     with open(file_path, mode) as f:
         f.write(post_body)
 
-    return RedirectResponse(url=post_url + f"?blog_id={blog_id}#footer", status_code=status.HTTP_303_SEE_OTHER)
+    return redirect(post_url + f"?blog_id={blog_id}#footer")
 
 
 def get_posts(file, blog_id: str):
@@ -149,3 +155,7 @@ def get_posts(file, blog_id: str):
     posts = posts.split("\n--\n")
 
     return posts
+
+
+if __name__ == "__main__":
+    app.run(host="127.0.0.1", port=9876, debug=True)

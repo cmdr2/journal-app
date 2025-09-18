@@ -3,6 +3,6 @@
 @echo off
 
 @cd C:\path\to\journal-app
-@wsl /path/to/wsl/user/.local/bin/uvicorn --port 9876 server:app
+@python server.py
 
 pause

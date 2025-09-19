@@ -9,11 +9,13 @@
 </nav>
 
 <form id="editorWrapper" method="post" action="/new">
-    Blog: 
-    <select name="blog_id">
-        <option value="private" selected>private</option>
-        <option value="public">PUBLIC</option>
-    </select>
+    <div>
+        Blog:
+        <select name="blog_id">
+            <option value="private" selected>private</option>
+            <option value="public">PUBLIC</option>
+        </select>
+    </div>
     <br/>
     <textarea id="editor" name="post_body" autofocus></textarea>
     <br/>

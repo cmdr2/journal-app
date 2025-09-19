@@ -42,8 +42,8 @@ a {
     color: rgb(232, 230, 227);
 }
 nav {
-    margin-left: 8pt;
-    padding: 10pt;
+    padding: 8pt;
+    padding-bottom: 4pt;
 }
 #posts {
     flex: 1;
@@ -57,10 +57,9 @@ nav {
 }
 #editor {
     flex: 1;
-    width: 100%;
     background: #181a1b;
     color: rgb(232, 230, 227);
-    font-size: 14pt;
+    font-size: 12pt;
     padding: 8pt;
     border: 1px solid #6c7275;
     border-radius: 6pt;
@@ -75,7 +74,6 @@ nav {
     font-size: 16pt;
     border: 1px solid #6c7275;
     border-radius: 6pt;
-    margin-top: 10pt;
 }
 #createPostBtn:active {
     background: #4a5053;
@@ -105,14 +103,14 @@ nav {
 /* Mobile adjustments */
 @media (max-width: 768px) {
     body {
-        font-size: 14pt;
+        font-size: 12pt;
     }
     nav {
         font-size: 13pt;
         padding: 8pt;
     }
     #editor {
-        font-size: 16pt;
+        font-size: 12pt;
     }
     #createPostBtn {
         font-size: 18pt;

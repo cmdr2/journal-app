@@ -33,7 +33,7 @@ editor.addEventListener("input", () => {
 });
 
 // clear draft on submit
-document.getElementById("postForm").addEventListener("submit", () => {
+document.getElementById("editorWrapper").addEventListener("submit", () => {
     localStorage.removeItem("urnal-draft");
 });
 </script>

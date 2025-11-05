@@ -24,11 +24,11 @@ class MarkdownToHtmlConverter:
         # Extract code blocks and replace them with placeholders
         html = self.code_block_pattern.sub(self._extract_code_block, html)
 
+        # Extract inline code and replace with placeholders
+        html = self.inline_code_pattern.sub(self._extract_inline_code, html)
+
         # Process headers
         html = self.header_pattern.sub(self._replace_header, html)
-
-        # Handle inline code
-        html = self.inline_code_pattern.sub(lambda m: f"<code>{self._escape_html(m.group(1))}</code>", html)
 
         # Handle bold text
         html = self.bold_pattern.sub(r"<strong>\1</strong>", html)
@@ -58,8 +58,14 @@ class MarkdownToHtmlConverter:
         html = self._wrap_paragraphs(html)
 
         # Replace GUID placeholders with actual code block contents
-        for guid, (language, code) in self.code_blocks.items():
-            html = html.replace(guid, self._wrap_code_block(language, code))
+        for guid, content in self.code_blocks.items():
+            if isinstance(content, tuple):
+                # It's a code block with (language, code)
+                language, code = content
+                html = html.replace(guid, self._wrap_code_block(language, code))
+            else:
+                # It's inline code
+                html = html.replace(guid, f"<code>{self._escape_html(content)}</code>")
 
         return html
 
@@ -70,6 +76,15 @@ class MarkdownToHtmlConverter:
         # Generate a GUID placeholder
         guid = str(uuid.uuid4())
         self.code_blocks[guid] = (language, code)  # Store the language and code block
+
+        return guid  # Return the placeholder
+
+    def _extract_inline_code(self, match):
+        code = match.group(1)
+
+        # Generate a GUID placeholder
+        guid = str(uuid.uuid4())
+        self.code_blocks[guid] = code  # Store just the code content
 
         return guid  # Return the placeholder
 

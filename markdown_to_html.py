@@ -97,61 +97,65 @@ class MarkdownToHtmlConverter:
         content = match.group(2)
         return f"<b>{match.group(0)}</b>"
 
-    def _replace_ordered_lists(self, text: str) -> str:
+    def _replace_lists(self, text: str, ordered: bool) -> str:
         lines = text.split("\n")
         result = []
-        in_ol = False
-        ol_items = []
-        start_index = None
+        stack = []  # stack of (indent, start_index or None)
 
         for line in lines:
-            match = self.ol_list_pattern.match(line)
-            if match:
-                number = int(line.split(".")[0])  # Extract the starting number
-                if not in_ol:
-                    in_ol = True
-                    start_index = number
-                    ol_items = []
-                ol_items.append(f"<li>{match.group(1)}</li>")
+            if ordered:
+                match = re.match(r"^(\s*)(\d+)\.\s+(.+)", line)
             else:
-                if in_ol:
-                    start_attr = f' start="{start_index}"' if start_index != 1 else ""
-                    result.append(f"<ol{start_attr}>")
-                    result.extend(ol_items)
-                    result.append("</ol>")
-                    in_ol = False
-                    ol_items = []
-                    start_index = None
+                match = re.match(r"^(\s*)[-*]\s+(.+)", line)
+
+            if match:
+                indent = len(match.group(1))
+
+                if ordered:
+                    number = int(match.group(2))
+                    content = match.group(3)
+                else:
+                    number = None
+                    content = match.group(2)
+
+                # Open new levels
+                while not stack or indent > stack[-1][0]:
+                    if ordered:
+                        start_attr = f' start="{number}"' if number != 1 else ""
+                        result.append(f"<ol{start_attr}>")
+                        stack.append((indent, number))
+                    else:
+                        result.append("<ul>")
+                        stack.append((indent, None))
+
+                # Close levels
+                while stack and indent < stack[-1][0]:
+                    tag = "ol" if ordered else "ul"
+                    result.append(f"</{tag}>")
+                    stack.pop()
+
+                result.append(f"<li>{content}</li>")
+            else:
+                # Close all open lists
+                while stack:
+                    tag = "ol" if ordered else "ul"
+                    result.append(f"</{tag}>")
+                    stack.pop()
                 result.append(line)
 
-        # Close any remaining list at the end
-        if in_ol:
-            start_attr = f' start="{start_index}"' if start_index != 1 else ""
-            result.append(f"<ol{start_attr}>")
-            result.extend(ol_items)
-            result.append("</ol>")
+        # Close any remaining lists
+        while stack:
+            tag = "ol" if ordered else "ul"
+            result.append(f"</{tag}>")
+            stack.pop()
 
         return "\n".join(result)
 
     def _replace_unordered_lists(self, text: str) -> str:
-        lines = text.split("\n")
-        result = []
-        in_ul = False
-        for line in lines:
-            match = self.ul_list_pattern.match(line)
-            if match:
-                if not in_ul:
-                    result.append("<ul>")
-                    in_ul = True
-                result.append(f"<li>{match.group(1)}</li>")
-            else:
-                if in_ul:
-                    result.append("</ul>")
-                    in_ul = False
-                result.append(line)
-        if in_ul:
-            result.append("</ul>")
-        return "\n".join(result)
+        return self._replace_lists(text, ordered=False)
+
+    def _replace_ordered_lists(self, text: str) -> str:
+        return self._replace_lists(text, ordered=True)
 
     def _replace_table(self, match):
         headers = [h.strip() for h in match.group(1).split("|") if h.strip()]

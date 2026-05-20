@@ -41,6 +41,9 @@ code {
 .codeblock {
     display: block;
 }
+.header {
+    margin-bottom: 6pt;
+}
 a {
     text-decoration: none;
     color: rgb(232, 230, 227);

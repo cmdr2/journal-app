@@ -94,8 +94,7 @@ class MarkdownToHtmlConverter:
         return f'<pre><code class="codeblock language-{language}">{escaped_code}</code></pre>'
 
     def _replace_header(self, match):
-        content = match.group(2)
-        return f"<b>{match.group(0)}</b>"
+        return f'<b style="display: block" class="header">{match.group(0)}</b>'
 
     def _replace_lists(self, text: str, ordered: bool) -> str:
         lines = text.split("\n")

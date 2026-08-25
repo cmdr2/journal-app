@@ -17,6 +17,7 @@ class MarkdownToHtmlConverter:
         self.ol_list_pattern = re.compile(r"^\d+\.\s+(.+)", re.MULTILINE)
         self.table_pattern = re.compile(r"^\|(.+?)\|\n\|(?:\s*:?-+:?\s*\|)+\n((?:\|.+?\|\n)+)", re.MULTILINE)
         self.code_blocks = {}
+        self.tables = {}
 
     def convert(self, markdown: str) -> str:
         html = markdown
@@ -26,6 +27,11 @@ class MarkdownToHtmlConverter:
 
         # Extract inline code and replace with placeholders
         html = self.inline_code_pattern.sub(self._extract_inline_code, html)
+
+        # Extract tables and replace with placeholders (must happen BEFORE
+        # inline formatting so that generated tags like <strong> inside
+        # cells aren't escaped later)
+        html = self.table_pattern.sub(self._extract_table, html)
 
         # Process headers
         html = self.header_pattern.sub(self._replace_header, html)
@@ -51,8 +57,6 @@ class MarkdownToHtmlConverter:
         # Handle ordered lists
         html = self._replace_ordered_lists(html)
 
-        # Handle tables
-        html = self.table_pattern.sub(self._replace_table, html)
 
         # Wrap paragraphs around text blocks
         html = self._wrap_paragraphs(html)
@@ -67,7 +71,23 @@ class MarkdownToHtmlConverter:
                 # It's inline code
                 html = html.replace(guid, f"<code>{self._escape_html(content)}</code>")
 
+        # Replace table placeholders with rendered tables (after code
+        # placeholders are restored so inline code inside cells works)
+        for guid, raw_table in self.tables.items():
+            for cguid, content in self.code_blocks.items():
+                if isinstance(content, tuple):
+                    language, code = content
+                    raw_table = raw_table.replace(cguid, self._wrap_code_block(language, code))
+                else:
+                    raw_table = raw_table.replace(cguid, f"<code>{self._escape_html(content)}</code>")
+            html = html.replace(guid, self._render_table(raw_table))
+
         return html
+
+    def _extract_table(self, match):
+        guid = str(uuid.uuid4())
+        self.tables[guid] = match.group(0)
+        return guid
 
     def _extract_code_block(self, match):
         language = match.group(1) if match.group(1) else "plaintext"
@@ -156,18 +176,30 @@ class MarkdownToHtmlConverter:
     def _replace_ordered_lists(self, text: str) -> str:
         return self._replace_lists(text, ordered=True)
 
-    def _replace_table(self, match):
-        headers = [h.strip() for h in match.group(1).split("|") if h.strip()]
-        rows = match.group(2).strip().split("\n")
+    def _render_table(self, raw_table: str) -> str:
+        lines = raw_table.split("\n")
+        headers = [h.strip() for h in lines[0].strip().strip("|").split("|")]
+        rows = [line for line in lines[2:] if line.strip()]
 
-        thead = "<thead><tr>" + "".join(f"<th>{self._escape_html(header)}</th>" for header in headers) + "</tr></thead>"
+        thead = "<thead><tr>" + "".join(f"<th>{self._format_inline(h)}</th>" for h in headers) + "</tr></thead>"
         tbody = "<tbody>"
         for row in rows:
-            columns = [c.strip() for c in row.split("|") if c.strip()]
-            tbody += "<tr>" + "".join(f"<td>{self._escape_html(col)}</td>" for col in columns) + "</tr>"
+            columns = [c.strip() for c in row.strip().strip("|").split("|")]
+            tbody += "<tr>" + "".join(f"<td>{self._format_inline(c)}</td>" for c in columns) + "</tr>"
         tbody += "</tbody>"
 
         return f"<table>{thead}{tbody}</table>"
+
+    def _format_inline(self, text: str) -> str:
+        # Apply the same inline formatting rules used elsewhere in the
+        # document. Code-block/inline-code placeholders have already been
+        # substituted back by this point.
+        text = self.bold_pattern.sub(r"<strong>\1</strong>", text)
+        text = self.italic_pattern.sub(r"<em>\1</em>", text)
+        text = self.strikethrough_pattern.sub(r"<del>\1</del>", text)
+        text = self.image_pattern.sub(r'<img src="\2" alt="\1" />', text)
+        text = self.link_pattern.sub(r'<a href="\2">\1</a>', text)
+        return text
 
     def _wrap_paragraphs(self, html: str) -> str:
         lines = html.split("\n")
